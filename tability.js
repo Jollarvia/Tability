@@ -136,6 +136,18 @@ tability.prototype.makeColumnAttrs = function (span, border, background, width, 
     if (visibility) r["visibility"] = visibility;
     return r;
 }
+tability.prototype.registerColumnFunc = function (column, func) {
+    var i = this.columnIndex(column);
+    if (i > -1) {
+        this.registerColumnFuncNum(i, func);
+    } else {
+        throw "column does not exist."
+    }
+}
+tability.prototype.registerColumnFuncNum = function (colNum, func) {
+    if (colNum > 0 && colNum < this.columnCount()) this.columns[colNum]["func"] = func;
+    else throw "invalid column index."
+}
 tability.prototype.getAllColumnAttrs = function () {
     return this.columns.map(function (c, i, a) { return (c.attrs) ? c.attrs : null });
 }
@@ -290,7 +302,7 @@ tability.prototype.makeBody = function(){
       var tr = this._tr();
       var dCount = dataRow.length;
       for (var d = 0; d < dCount; d++) {
-          var datum = dataRow[d];
+          var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
           tr.appendChild(td);
       }
@@ -319,7 +331,7 @@ tability.prototype.makeTable = function(){
       var tr = this._tr();
       var dCount = dataRow.length;
       for (var d = 0; d < dCount; d++) {
-          var datum = dataRow[d];
+          var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
           tr.appendChild(td);
       }
@@ -347,7 +359,7 @@ tability.prototype.retabilify = function(domNode){
     var tr = this._tr();
     var dCount = dataRow.length;
     for (var d = 0; d < dCount; d++) {
-        var datum = dataRow[d];
+        var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
         var td = this._td(datum || "");
         tr.appendChild(td);
     }
