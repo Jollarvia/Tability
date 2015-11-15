@@ -43,7 +43,7 @@ Add rows or columns dynamically:
 Tability can sort rows based on a single column. What if you want to sort Cheese Types in descending order?
  - lexical
  - numeric
- - date
+ - datetime
 
  
 
