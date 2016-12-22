@@ -1,4 +1,4 @@
-var tability = function (r, c, b, a) {
+var Tability = function (r, c, b, a) {
     "use strict";
     this.tableAttrs = null;
     this.columns = [];
@@ -32,6 +32,7 @@ var tability = function (r, c, b, a) {
     }
     this.rows = !r?[]:r;
     this.visibleRows = this.rows;
+    this.visibleColumns = {};
     if(!c) return;
     var clength = c.length;
 
@@ -49,30 +50,35 @@ var tability = function (r, c, b, a) {
                 throw "column number " + n + " is wrong type.";
         }
     }
+    var _this = this;
+    this.columns.forEach(function(vcol){
+        _this.visibleColumns[vcol.key] = (vcol.visible === false)? false : true;
+    })
+
 }
-tability.prototype.standardAttrs = function (c, s) {
+Tability.prototype.standardAttrs = function (c, s) {
     var r = {};
     if (c) r["className"] = c;
     if (s) r["style"] = s;
     return r;
 }
-tability.prototype.getAttrs = function (op) {
+Tability.prototype.getAttrs = function (op) {
     var r = {};
     for (var o in op) {
-        if (o != "key" && (op[o])) r[o] = op[o];
+        if (op.attrs && op.attrs[o]) r[o] = op.attrs[o];
     }
     return r;
 }
 
 
 //columns
-tability.prototype.containsColumn = function (col) {
+Tability.prototype.containsColumn = function (col) {
     for (var o = 0,y=this.columns.length; o < y; o++) {
         if (this.columns[o].key === col) return true;
     }
     return false;
 }
-tability.prototype.columnIndex = function (col) {
+Tability.prototype.columnIndex = function (col) {
     var clength = this.columnCount();
     for (var o = 0; o < clength; o++) {
         if (this.columns[o].key === col) {
@@ -81,7 +87,7 @@ tability.prototype.columnIndex = function (col) {
     }
     return -1;
 }
-tability.prototype.addColumn = function (keyandattrs) {
+Tability.prototype.addColumn = function (keyandattrs) {
     var ty = typeof keyandattrs;
     var k;
     switch (ty){
@@ -95,9 +101,10 @@ tability.prototype.addColumn = function (keyandattrs) {
     }
     if (this.containsColumn(k)) return false;
     this.columns.push(k);
+    this.visibleColumns[k.key] = !(k.visible === false);
     return true;
 }
-tability.prototype._insertColumn = function (keyandattrs, index) {
+Tability.prototype._insertColumn = function (keyandattrs, index) {
     var ty = typeof keyandattrs;
     var k;
     switch (ty){
@@ -105,17 +112,17 @@ tability.prototype._insertColumn = function (keyandattrs, index) {
             k = keyandattrs;
             break;
         case "array":
-            throw "invalid column type."
-            break;
+            throw "invalid column type.";
         default:
             k = {"key":keyandattrs};
             break;
     }
     if (this.containsColumn(k)) return false;
     this.columns.splice(index, 0, k);
+    this.visibleColumns[k.key] = !(k.visible === false);
     return true;
 }
-tability.prototype.insertColumn = function (keyandattrs,index) {
+Tability.prototype.insertColumn = function (keyandattrs,index) {
     if (this._insertColumn(keyandattrs,index)) {
         for (var i=0,m=this.rowCount();i<m;i++) {
             this.insertNumRowValue(index,null,i);
@@ -124,10 +131,10 @@ tability.prototype.insertColumn = function (keyandattrs,index) {
     }
     return false;
 }
-tability.prototype.columnCount = function () {
+Tability.prototype.columnCount = function () {
     return this.columns.length;
 }
-tability.prototype.makeColumnAttrs = function (span, border, background, width, visibility) {
+Tability.prototype.makeColumnAttrs = function (span, border, background, width, visibility) {
     var r = {};
     if (span) r["span"] = span.toString();
     if (border) r["border"] = border;
@@ -136,7 +143,7 @@ tability.prototype.makeColumnAttrs = function (span, border, background, width, 
     if (visibility) r["visibility"] = visibility;
     return r;
 }
-tability.prototype.registerColumnFunc = function (column, func) {
+Tability.prototype.registerColumnFunc = function (column, func) {
     var i = this.columnIndex(column);
     if (i > -1) {
         this.registerColumnFuncNum(i, func);
@@ -144,20 +151,20 @@ tability.prototype.registerColumnFunc = function (column, func) {
         throw "column does not exist."
     }
 }
-tability.prototype.registerColumnFuncNum = function (colNum, func) {
+Tability.prototype.registerColumnFuncNum = function (colNum, func) {
     if (colNum > 0 && colNum < this.columnCount()) this.columns[colNum]["func"] = func;
     else throw "invalid column index."
 }
-tability.prototype.getAllColumnAttrs = function () {
+Tability.prototype.getAllColumnAttrs = function () {
     return this.columns.map(function (c, i, a) { return (c.attrs) ? c.attrs : null });
 }
-tability.prototype.getColumnAttrs = function (colNum) {
+Tability.prototype.getColumnAttrs = function (colNum) {
     return this.columns[colNum].attrs;
 }
-tability.prototype.getColumnNames = function () {
+Tability.prototype.getColumnNames = function () {
     return this.columns.map(function (c, i, a) { return c.key });
 }
-tability.prototype.getColumnNum = function (colNum) {
+Tability.prototype.getColumnNum = function (colNum) {
     if (this.columnCount() <= colNum || colNum < 0) throw "invalid column index.";
     var ar = [this.columns[colNum].key];
     for (var m=this.rowCount(),i=0; i<m; i++) {
@@ -165,34 +172,34 @@ tability.prototype.getColumnNum = function (colNum) {
     }
     return ar;
 }
-tability.prototype.getColumn = function (col){
+Tability.prototype.getColumn = function (col){
     var index = this.columnIndex(col);
     return this.getColumnNum(index);
 }
-tability.prototype._resetColumns = function () {
+Tability.prototype._resetColumns = function () {
     this.columns.splice(0,this.columns.length);
 }
 
 //rows
-tability.prototype.addRow = function (r) {
+Tability.prototype.addRow = function (r) {
     this.rows.push(r);
 }
-tability.prototype.insertRow = function (r, index) {
+Tability.prototype.insertRow = function (r, index) {
     this.rows.splice(index, 0, r);
 }
-tability.prototype.rowCount = function () {
+Tability.prototype.rowCount = function () {
     return this.rows.length;
 }
-tability.prototype.getRow = function (rowNum) {
+Tability.prototype.getRow = function (rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     return this.rows[i];
 }
-tability.prototype.getRowValue = function (col, rowNum) {
+Tability.prototype.getRowValue = function (col, rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     var colIndex = this.columnIndex(col);
     if (colIndex != -1) return this.rows[rowNum][colIndex];
 }
-tability.prototype.setRowValue = function (col, value, rowNum) {
+Tability.prototype.setRowValue = function (col, value, rowNum) {
     if (this.rowCount <= rowNum || rowNum < 0) throw "invalid row index.";
     var colIndex = this.columnIndex(col);
     if (colIndex != -1) {
@@ -201,41 +208,41 @@ tability.prototype.setRowValue = function (col, value, rowNum) {
     }
     throw "column "+col+" does not currently exist."
 }
-tability.prototype.insertNumRowValue = function(colNum, value, rowNum) {
+Tability.prototype.insertNumRowValue = function(colNum, value, rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     if (this.columnCount() <= colNum || colNum < 0) throw "invalid column index.";
     this.rows[rowNum].splice(colNum,0,value);
 }
-tability.prototype.getNumRowValue = function (colNum, rowNum) {
+Tability.prototype.getNumRowValue = function (colNum, rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     if (this.columnCount() <= colNum || colNum < 0) throw "invalid column index.";
     return this.rows[rowNum][colNum];
 }
-tability.prototype.setNumRowValue = function (colNum, value, rowNum) {
+Tability.prototype.setNumRowValue = function (colNum, value, rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     if (this.columnCount() <= colNum || colNum < 0) throw "invalid column index.";
     this.rows[rowNum][colNum] = value;
 }
-tability.prototype.redoRow = function (ar, rowNum) {
+Tability.prototype.redoRow = function (ar, rowNum) {
     if (this.rowCount() <= rowNum || rowNum < 0) throw "invalid row index.";
     this.rows[rowNum] = ar;
 }
-tability.prototype.resetRows = function () {
+Tability.prototype.resetRows = function () {
     this.rows.splice(0,this.rows.length);
 }
-tability.prototype.deleteRows = function (fro, to) {
+Tability.prototype.deleteRows = function (fro, to) {
     var rest = this.rows.slice(parseInt(to || fro) + 1 || this.rows.length);
     this.rows.length = fro < 0 ? this.rows.length + fro : fro;
     return this.rows.push.apply(this.rows, rest);
 }
 
-tability.prototype.clear = function(){
+Tability.prototype.clear = function(){
   this._resetColumns();
   this.resetRows();
 }
 
 // HTML
-tability.prototype._setAttrs = function (attrs, elem) {
+Tability.prototype._setAttrs = function (attrs, elem) {
     if (!attrs) return;
     for (var key in attrs) {
         if (attrs[key]) {
@@ -249,10 +256,13 @@ tability.prototype._setAttrs = function (attrs, elem) {
         }
     }
 }
-tability.prototype.visibleRowCount = function(){
+Tability.prototype.visibleRowCount = function(){
     return this.visibleRows.length;
 }
-tability.prototype._makeElem = function (domtype, inhtml, attrs) {
+Tability.prototype.visibleColumnCount = function(){
+    return this.visibleColumns.length;
+}
+Tability.prototype._makeElem = function (domtype, inhtml, attrs) {
     var delem = document.createElement(domtype);
     if (inhtml) delem.innerHTML = inhtml;
     if (attrs) {
@@ -260,33 +270,34 @@ tability.prototype._makeElem = function (domtype, inhtml, attrs) {
     }
     return delem;
 }
-tability.prototype._tbody = function (inhtml, attrs) {
+Tability.prototype._tbody = function (inhtml, attrs) {
     return this._makeElem("tbody", inhtml, attrs);
 }
-tability.prototype._table = function (inhtml, attrs) {
+Tability.prototype._table = function (inhtml, attrs) {
     return this._makeElem("table", inhtml, attrs);
 }
-tability.prototype._col = function (inhtml, attrs) {
+Tability.prototype._col = function (inhtml, attrs) {
     return this._makeElem("col", inhtml, attrs);
 }
-tability.prototype._thead = function (inhtml, attrs) {
+Tability.prototype._thead = function (inhtml, attrs) {
     return this._makeElem("thead", inhtml, attrs);
 }
-tability.prototype._th = function (inhtml, attrs) {
+Tability.prototype._th = function (inhtml, attrs) {
     return this._makeElem("th", inhtml, attrs);
 }
-tability.prototype._td = function (inhtml, attrs) {
+Tability.prototype._td = function (inhtml, attrs) {
     return this._makeElem("td", inhtml, attrs);
 }
-tability.prototype._tr = function (inhtml, attrs) {
+Tability.prototype._tr = function (inhtml, attrs) {
     return this._makeElem("tr", inhtml, attrs);
 }
-tability.prototype.makeHead = function(){
+Tability.prototype.makeHead = function(){
   var thead = this._thead();
   var colOps = this.getAllColumnAttrs();
   var colCount = cols.length;
   for (var c = 0; c < colCount; c++) {
       var col = cols[c];
+      if (!this.visibleColumns[col]) continue;
       var colOp = colOps[c];
       var htmcol = this._col(null, colOp);
       table.appendChild(htmcol);
@@ -294,7 +305,7 @@ tability.prototype.makeHead = function(){
   }
   return thead;
 }
-tability.prototype.makeBody = function(){
+Tability.prototype.makeBody = function(){
   var tbody = this._tbody();
   var rowCount = this.rowCount();
   for (var r = 0; r < rowCount; r++) {
@@ -302,6 +313,7 @@ tability.prototype.makeBody = function(){
       var tr = this._tr();
       var dCount = dataRow.length;
       for (var d = 0; d < dCount; d++) {
+         if (!this.visibleColumns[this.columns[d]]) continue;
           var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
           tr.appendChild(td);
@@ -310,7 +322,7 @@ tability.prototype.makeBody = function(){
   }
   return tbody;
 }
-tability.prototype.makeTable = function(){
+Tability.prototype.makeTable = function(){
   var table = this._table(null, this.getAttrs(this.tableAttrs));
   var colOps = this.getAllColumnAttrs();
   var cols = this.getColumnNames();
@@ -318,6 +330,7 @@ tability.prototype.makeTable = function(){
   var colCount = cols.length;
   for (var c = 0; c < colCount; c++) {
       var col = cols[c];
+      if (!this.visibleColumns[col]) continue;
       var colOp = colOps[c];
       var htmcol = this._col(null, colOp);
       table.appendChild(htmcol);
@@ -331,6 +344,7 @@ tability.prototype.makeTable = function(){
       var tr = this._tr();
       var dCount = dataRow.length;
       for (var d = 0; d < dCount; d++) {
+          if (!this.visibleColumns[cols[d]]) continue;
           var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
           tr.appendChild(td);
@@ -340,17 +354,18 @@ tability.prototype.makeTable = function(){
   table.appendChild(tbody);
   return table;
 }
-tability.prototype.getTableHTML = function(){
+Tability.prototype.getTableHTML = function(){
   return this.makeTable().outerHTML;
 }
-tability.prototype.tabilify = function (domNode) {
+Tability.prototype.tabilify = function (domNode) {
+    if (!domNode) throw "no dom node, "+ domNode + " found."
     if (this.beforeBuild) this.beforeBuild();
     var table = this.makeTable();
     domNode.innerHTML = "";
     domNode.appendChild(table);
     if (this.afterBuild) this.afterBuild();
 }
-tability.prototype.retabilify = function(domNode){
+Tability.prototype.retabilify = function(domNode){
   if (this.beforeBuild) this.beforeBuild();
   var tbody = domNode.getElementsByTagName("tbody")[0];
   tbody.innerHTML = "";
@@ -369,47 +384,47 @@ tability.prototype.retabilify = function(domNode){
 }
 //Data Transformation
 //Sorting
-tability.prototype._custom = function(column,tfunc){
+Tability.prototype._custom = function(column,tfunc){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist."
     this._parent.rows.sort(tfunc);
 }
-tability.prototype._numericAscending = function(column){
+Tability.prototype._numericAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist."
     this._parent.rows.sort(function(a,b){
         return parseFloat(a[ind]) - parseFloat(b[ind]);
     });
 }
-tability.prototype._numericDescending = function(column){
+Tability.prototype._numericDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     this._parent.rows.sort(function(a,b){
         return parseFloat(b[ind]) - parseFloat(a[ind]);
     });
 }
-tability.prototype._lexAscending = function(column){
+Tability.prototype._lexAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     this._parent.rows.sort(function(a,b){
         return a.toString().localeCompare(b.toString());
     });
 }
-tability.prototype._lexDescending = function(column){
+Tability.prototype._lexDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     this._parent.rows.sort(function(a,b){
         return b.toString().localeCompare(a.toString());
     });
 }
-tability.prototype._dateAscending = function(column){
+Tability.prototype._dateAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     this._parent.rows.sort(function(a,b){
         return Date.parse(a) - Date.parse(b);
     });
 }
-tability.prototype._dateDescending = function(column){
+Tability.prototype._dateDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     this._parent.rows.sort(function(a,b){
@@ -417,7 +432,7 @@ tability.prototype._dateDescending = function(column){
     });
 }
 // filtering
-tability.prototype._filter = function(column, value, rFunc){
+Tability.prototype._filter = function(column, value, rFunc){
     var val = typeof value !== "array"? [value] : value;
     var ind = this.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
@@ -433,9 +448,15 @@ tability.prototype._filter = function(column, value, rFunc){
     }
     return ret;
 }
-tability.prototype.filter = function(column, value, rfunc){
+Tability.prototype.filter = function(column, value, rfunc){
     this.visibleRows = this._filter(column, value, rfunc);
 }
-tability.prototype.revertRows = function(){
+Tability.prototype.revertRows = function(){
     this.visibleRows = this.rows;
+}
+Tability.prototype.setColumnVisibility = function(column, visibility){
+    this.visibleColumns[column] = visibility;
+}
+Tability.prototype.getColumnVisibility = function(column){
+    return this.visibleColumns[column];
 }
