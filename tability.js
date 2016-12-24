@@ -1,5 +1,6 @@
 var Tability = function (r, c, b, a) {
     "use strict";
+    this._class = "tab-";
     this.tableAttrs = null;
     this.columns = [];
     this.sort = {
@@ -251,7 +252,7 @@ Tability.prototype._setAttrs = function (attrs, elem) {
                     elem[key][skey] = attrs[key][skey];
                 }
             } else {
-                elem[key] = attrs[key];
+                elem.setAttribute(key, attrs[key]);
             }
         }
     }
@@ -260,7 +261,12 @@ Tability.prototype.visibleRowCount = function(){
     return this.visibleRows.length;
 }
 Tability.prototype.visibleColumnCount = function(){
-    return this.visibleColumns.length;
+    var b = 0;
+    var _this = this;
+    Object.keys(this.visibleColumns).forEach(function(el){
+        if (_this.visibleColumns(el)) b++;
+    })
+    return b;
 }
 Tability.prototype._makeElem = function (domtype, inhtml, attrs) {
     var delem = document.createElement(domtype);
@@ -291,54 +297,30 @@ Tability.prototype._td = function (inhtml, attrs) {
 Tability.prototype._tr = function (inhtml, attrs) {
     return this._makeElem("tr", inhtml, attrs);
 }
-Tability.prototype.makeHead = function(){
-  var thead = this._thead();
-  var colOps = this.getAllColumnAttrs();
-  var colCount = cols.length;
-  for (var c = 0; c < colCount; c++) {
-      var col = cols[c];
-      if (!this.visibleColumns[col]) continue;
-      var colOp = colOps[c];
-      var htmcol = this._col(null, colOp);
-      table.appendChild(htmcol);
-      thead.appendChild(this._th(col));
-  }
-  return thead;
-}
-Tability.prototype.makeBody = function(){
-  var tbody = this._tbody();
-  var rowCount = this.rowCount();
-  for (var r = 0; r < rowCount; r++) {
-      var dataRow = this.rows[r];
-      var tr = this._tr();
-      var dCount = dataRow.length;
-      for (var d = 0; d < dCount; d++) {
-         if (!this.visibleColumns[this.columns[d]]) continue;
-          var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
-          var td = this._td(datum || "");
-          tr.appendChild(td);
-      }
-      tbody.appendChild(tr);
-  }
-  return tbody;
-}
-Tability.prototype.makeTable = function(){
-  var table = this._table(null, this.getAttrs(this.tableAttrs));
+Tability.prototype.makeHead = function(table){
   var colOps = this.getAllColumnAttrs();
   var cols = this.getColumnNames();
   var thead = this._thead();
+  var tr = this._tr();
   var colCount = cols.length;
   for (var c = 0; c < colCount; c++) {
       var col = cols[c];
       if (!this.visibleColumns[col]) continue;
       var colOp = colOps[c];
       var htmcol = this._col(null, colOp);
-      table.appendChild(htmcol);
-      thead.appendChild(this._th(col));
+      table && table.appendChild(htmcol);
+      var th = this._th(col);
+      th.className = this._class + "hc-" + c;
+      tr.appendChild(th);
   }
-  table.appendChild(thead);
+  thead.appendChild(tr);
+  table && table.appendChild(thead);
+  return thead;
+}
+Tability.prototype.makeBody = function(table){
   var tbody = this._tbody();
   var rowCount = this.visibleRowCount();
+  var cols = this.getColumnNames();
   for (var r = 0; r < rowCount; r++) {
       var dataRow = this.visibleRows[r];
       var tr = this._tr();
@@ -347,11 +329,18 @@ Tability.prototype.makeTable = function(){
           if (!this.visibleColumns[cols[d]]) continue;
           var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
+          td.className = this._class + 'r-' + r + ' ' + this._class + 'c-' + d;
           tr.appendChild(td);
       }
       tbody.appendChild(tr);
   }
-  table.appendChild(tbody);
+  table && table.appendChild(tbody);
+  return tbody;
+}
+Tability.prototype.makeTable = function(){
+  var table = this._table(null, this.getAttrs(this.tableAttrs));
+  this.makeHead(table);
+  this.makeBody(table);
   return table;
 }
 Tability.prototype.getTableHTML = function(){
