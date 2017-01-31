@@ -1,8 +1,9 @@
 var Tability = function (r, c, b, a) {
     "use strict";
-    this._class = "tab-";
+    this._class = "ty-";
     this.tableAttrs = null;
     this.columns = [];
+    this.datatypes = {"lexical": true, "numeric": true, "datetime": true};
     this.sort = {
         custom: this._custom,
         numeric: {
@@ -109,14 +110,13 @@ Tability.prototype._insertColumn = function (keyandattrs, index) {
     var ty = typeof keyandattrs;
     var k;
     switch (ty){
+        case "string":
+            k = {"key":keyandattrs};
+            break;
         case "object":
             k = keyandattrs;
             break;
-        case "array":
-            throw "invalid column type.";
-        default:
-            k = {"key":keyandattrs};
-            break;
+        default: throw "invalid column type."
     }
     if (this.containsColumn(k)) return false;
     this.columns.splice(index, 0, k);
@@ -161,6 +161,12 @@ Tability.prototype.getAllColumnAttrs = function () {
 }
 Tability.prototype.getColumnAttrs = function (colNum) {
     return this.columns[colNum].attrs;
+}
+Tability.prototype.getColumnDatatype = function (colNum) {
+    return this.columns[colNum].datatype;
+}
+Tability.prototype.getColumnOptions = function(colNum) {
+    return this.columns[colNum];
 }
 Tability.prototype.getColumnNames = function () {
     return this.columns.map(function (c, i, a) { return c.key });
@@ -310,7 +316,7 @@ Tability.prototype.makeHead = function(table){
       var htmcol = this._col(null, colOp);
       table && table.appendChild(htmcol);
       var th = this._th(col);
-      th.className = this._class + "hc-" + c;
+      th.className = this._class + "hc-" + c + " " + this._class + "hc";
       tr.appendChild(th);
   }
   thead.appendChild(tr);
@@ -329,7 +335,7 @@ Tability.prototype.makeBody = function(table){
           if (!this.visibleColumns[cols[d]]) continue;
           var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
-          td.className = this._class + 'r-' + r + ' ' + this._class + 'c-' + d;
+          td.className = this._class + 'r-' + r + ' ' + this._class + 'c' + d;
           tr.appendChild(td);
       }
       tbody.appendChild(tr);
@@ -347,7 +353,8 @@ Tability.prototype.getTableHTML = function(){
   return this.makeTable().outerHTML;
 }
 Tability.prototype.tabilify = function (domNode) {
-    if (!domNode) throw "no dom node, "+ domNode + " found."
+    if (typeof domNode == "string") domNode = document.getElementById(domNode);
+    if (!domNode) throw "No dom node found.";
     if (this.beforeBuild) this.beforeBuild();
     var table = this.makeTable();
     domNode.innerHTML = "";
@@ -355,20 +362,14 @@ Tability.prototype.tabilify = function (domNode) {
     if (this.afterBuild) this.afterBuild();
 }
 Tability.prototype.retabilify = function(domNode){
+  if (typeof domNode == "string") domNode = document.getElementById(domNode);
+  if (!domNode) throw "No dom node found."; 
   if (this.beforeBuild) this.beforeBuild();
   var tbody = domNode.getElementsByTagName("tbody")[0];
-  tbody.innerHTML = "";
-  for (var r = 0, m=this.visibleRowCount(); r < m; r++) {
-    var dataRow = this.visibleRows[r];
-    var tr = this._tr();
-    var dCount = dataRow.length;
-    for (var d = 0; d < dCount; d++) {
-        var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
-        var td = this._td(datum || "");
-        tr.appendChild(td);
-    }
-    tbody.appendChild(tr);
-  }
+  newTbody = this.makeBody();
+  tbody.remove();
+  domNode.appendChild(newTbody);
+  
   if (this.afterBuild) this.afterBuild();
 }
 //Data Transformation
