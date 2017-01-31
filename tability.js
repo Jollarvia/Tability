@@ -24,6 +24,7 @@ var Tability = function (r, c, b, a) {
     };
     this.beforeBuild = b;
     this.afterBuild = a;
+    this.container = null;
     if (!c) {
         if (r&&r[0]){
 
@@ -355,15 +356,16 @@ Tability.prototype.getTableHTML = function(){
 Tability.prototype.tabilify = function (domNode) {
     if (typeof domNode == "string") domNode = document.getElementById(domNode);
     if (!domNode) throw "No dom node found.";
+    this.container = domNode; 
     if (this.beforeBuild) this.beforeBuild();
     var table = this.makeTable();
     domNode.innerHTML = "";
     domNode.appendChild(table);
     if (this.afterBuild) this.afterBuild();
 }
-Tability.prototype.retabilify = function(domNode){
-  if (typeof domNode == "string") domNode = document.getElementById(domNode);
-  if (!domNode) throw "No dom node found."; 
+Tability.prototype.retabilify = function(){
+  if (!this.container) throw "No dom node found.";
+  var domNode = this.container;
   if (this.beforeBuild) this.beforeBuild();
   var tbody = domNode.getElementsByTagName("tbody")[0];
   newTbody = this.makeBody();
@@ -449,4 +451,10 @@ Tability.prototype.setColumnVisibility = function(column, visibility){
 }
 Tability.prototype.getColumnVisibility = function(column){
     return this.visibleColumns[column];
+}
+Tability.prototype.autoSort = function(header, toggle){
+    var datatype = this.getColumnDatatype(this.columnIndex(header));
+    if (datatype) this.sort[datatype][toggle? "ascending" : "descending"](header);
+    else this.sort.lexical[toggle? "ascending" : "descending"](header);
+
 }
