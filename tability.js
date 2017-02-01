@@ -370,7 +370,7 @@ Tability.prototype.retabilify = function(){
   var tbody = domNode.getElementsByTagName("tbody")[0];
   newTbody = this.makeBody();
   tbody.remove();
-  domNode.appendChild(newTbody);
+  domNode.getElementsByTagName("table")[0].appendChild(newTbody);
   
   if (this.afterBuild) this.afterBuild();
 }
@@ -379,57 +379,59 @@ Tability.prototype.retabilify = function(){
 Tability.prototype._custom = function(column,tfunc){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist."
-    this._parent.rows.sort(tfunc);
+
+    this._parent.visibleRows.sort(function(a,b){
+        return tfunc(a[i], b[i]);
+    });
 }
 Tability.prototype._numericAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist."
-    this._parent.rows.sort(function(a,b){
+    this._parent.visibleRows.sort(function(a,b){
         return parseFloat(a[ind]) - parseFloat(b[ind]);
     });
 }
 Tability.prototype._numericDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
-    this._parent.rows.sort(function(a,b){
+    this._parent.visibleRows.sort(function(a,b){
         return parseFloat(b[ind]) - parseFloat(a[ind]);
     });
 }
 Tability.prototype._lexAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
-    this._parent.rows.sort(function(a,b){
-        return a.toString().localeCompare(b.toString());
+    this._parent.visibleRows.sort(function(a,b){
+        return a[ind].toString().localeCompare(b[ind].toString());
     });
 }
 Tability.prototype._lexDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
-    this._parent.rows.sort(function(a,b){
-        return b.toString().localeCompare(a.toString());
+    this._parent.visibleRows.sort(function(a,b){
+        return b[ind].toString().localeCompare(a[ind].toString());
     });
 }
 Tability.prototype._dateAscending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
-    this._parent.rows.sort(function(a,b){
-        return Date.parse(a) - Date.parse(b);
+    this._parent.visibleRows.sort(function(a,b){
+        return Date.parse(a[ind]) - Date.parse(b[ind]);
     });
 }
 Tability.prototype._dateDescending = function(column){
     var ind = this._parent.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
-    this._parent.rows.sort(function(a,b){
-        return Date.parse(b) - Date.parse(a);
+    this._parent.visibleRows.sort(function(a,b){
+        return Date.parse(b[ind]) - Date.parse(a[ind]);
     });
 }
 // filtering
 Tability.prototype._filter = function(column, value, rFunc){
-    var val = typeof value !== "array"? [value] : value;
     var ind = this.columnIndex(column);
     if (ind == -1) throw "Column does not exist.";
     var func = rFunc || function(rw,dx){
-        if (val.indexOf(rw[dx])>-1) return true;
+        if (rw[dx].toLowerCase().indexOf(value.toLowerCase())>-1) return true;
         return false;
     };
     var ret = [];
