@@ -34,7 +34,7 @@ var Tability = function (r, c, b, a) {
 	    }
     }
     this.rows = !r?[]:r;
-    this.visibleRows = this.rows;
+    this.visibleRows = this.rows.slice(0, this.rows.length);
     this.visibleColumns = {};
     if(!c) return;
     var clength = c.length;
@@ -336,7 +336,7 @@ Tability.prototype.makeBody = function(table){
           if (!this.visibleColumns[cols[d]]) continue;
           var datum = this.columns[d]["func"]? this.columns[d]["func"](dataRow[d]):dataRow[d];
           var td = this._td(datum || "");
-          td.className = this._class + 'r-' + r + ' ' + this._class + 'c' + d;
+          td.className = this._class + 'r-' + r + ' ' + this._class + 'c-' + d;
           tr.appendChild(td);
       }
       tbody.appendChild(tr);
@@ -369,7 +369,7 @@ Tability.prototype.retabilify = function(){
   if (this.beforeBuild) this.beforeBuild();
   var tbody = domNode.getElementsByTagName("tbody")[0];
   newTbody = this.makeBody();
-  tbody.remove();
+  domNode.getElementsByTagName("table")[0].removeChild(tbody);
   domNode.getElementsByTagName("table")[0].appendChild(newTbody);
   
   if (this.afterBuild) this.afterBuild();
@@ -446,7 +446,7 @@ Tability.prototype.filter = function(column, value, rfunc){
     this.visibleRows = this._filter(column, value, rfunc);
 }
 Tability.prototype.revertRows = function(){
-    this.visibleRows = this.rows;
+    this.visibleRows = this.rows.slice(0,this.rows.length);
 }
 Tability.prototype.setColumnVisibility = function(column, visibility){
     this.visibleColumns[column] = visibility;
