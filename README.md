@@ -1,5 +1,5 @@
 # Tability
-Lightweight, fast dataset for displaying and manipulating html tables.
+Lightweight, fast dataset for displaying and manipulating html tables. It quickly writes HTML tables that conform to modern standards, completely free of dependencies but are usable in packages like jQuery UI and Bootstrap.
 
     var table = new Tability();
 
