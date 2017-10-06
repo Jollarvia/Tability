@@ -39,7 +39,7 @@ Add rows or columns dynamically:
     table.addColumn("Cheese Type");
 *adds "Cheese Type" as final column in table.
 
-## Sorting  & Filtering##
+## Sorting  & Filtering ##
 Tability can sort rows based on a single column. What if you want to sort Cheese Types in descending order?
  - lexical
  - numeric
